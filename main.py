@@ -4,35 +4,43 @@
 # 3. Update the SMTP ADDRESS to match your email provider.
 # 4. Update birthdays.csv to contain today's month and day.
 # See the solution video in the 100 Days of Python Course for explainations.
-
-
-from datetime import datetime
-import pandas
-import random
+import requests
 import smtplib
 import os
 
-# import os and use it to get the Github repository secrets
-MY_EMAIL = os.environ.get("MY_EMAIL")
-MY_PASSWORD = os.environ.get("MY_PASSWORD")
+API_KEY = os.environ.get("WEATHER_API_KEY")
+LATITUDE = 14.605810
+LONGITUDE = 121.021629
+MY_EMAIL = os.environ.get("EMAIL")
+MY_PASSWORD = os.environ.get("E_PASSWORD")
 
-today = datetime.now()
-today_tuple = (today.month, today.day)
+parameters = {"lat": LATITUDE,
+            "lon": LONGITUDE,
+            "appid": API_KEY,
+              "cnt": 4}
 
-data = pandas.read_csv("birthdays.csv")
-birthdays_dict = {(data_row["month"], data_row["day"])                  : data_row for (index, data_row) in data.iterrows()}
-if today_tuple in birthdays_dict:
-    birthday_person = birthdays_dict[today_tuple]
-    file_path = f"letter_templates/letter_{random.randint(1, 3)}.txt"
-    with open(file_path) as letter_file:
-        contents = letter_file.read()
-        contents = contents.replace("[NAME]", birthday_person["name"])
+weather_data = requests.get(url= "https://api.openweathermap.org/data/2.5/forecast", params=parameters)
+weather_data.raise_for_status()
 
-    with smtplib.SMTP("YOUR EMAIL PROVIDER SMTP SERVER ADDRESS") as connection:
+w_data_12hrs = weather_data.json()
+
+def will_it_rain():
+    for data in w_data_12hrs['list']:
+        weather_id_code = data.get('weather')[0].get('id')
+        if weather_id_code < 700:
+            return True
+    return False
+
+def send_rain_alert():
+    with smtplib.SMTP("smtp.gmail.com", 587) as connection:
         connection.starttls()
-        connection.login(MY_EMAIL, MY_PASSWORD)
-        connection.sendmail(
-            from_addr=MY_EMAIL,
-            to_addrs=birthday_person["email"],
-            msg=f"Subject:Happy Birthday!\n\n{contents}"
-        )
+        connection.login(user=MY_EMAIL, password=MY_PASSWORD)
+        connection.sendmail(from_addr=MY_EMAIL,to_addrs=MY_EMAIL,
+                            msg=f"Subject:Bring an Umbrella!\n\nIt's raining today. Better bring an umbrella.\n\nFrom,\nGelo")
+
+if will_it_rain():
+    send_rain_alert()
+
+
+
+
