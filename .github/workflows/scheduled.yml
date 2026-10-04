@@ -41,6 +41,7 @@ jobs:
         env:
           # Your secrets are available as environment variables
           # Add more secrets in Settings > Secrets > Actions
+          WEATHER_API_KEY:  ${{ secrets.WEATHER_API_KEY }}
           EMAIL: ${{ secrets.EMAIL }}
           E_PASSWORD: ${{ secrets.E_PASSWORD}}
         run: python main.py
